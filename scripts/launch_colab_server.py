@@ -17,6 +17,9 @@ def main():
     os.environ["STUDIO_API_TOKEN"] = STUDIO_API_TOKEN
     os.environ["STUDIO_AUTH_TOKEN"] = STUDIO_API_TOKEN
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    # Ensure Hugging Face cache uses fast local NVMe SSD to avoid Google Drive FUSE mmap corruption
+    os.environ["HF_HOME"] = "/content/huggingface_cache"
+    os.makedirs("/content/huggingface_cache", exist_ok=True)
     
     # Identify app dir
     app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
