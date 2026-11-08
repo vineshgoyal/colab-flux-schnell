@@ -27,6 +27,14 @@ def main():
     subprocess.run(["pkill", "-9", "-f", "cloudflared"], stderr=subprocess.DEVNULL)
     time.sleep(1.5)
     
+    # Ensure bitsandbytes is installed for 4-bit FLUX quantization
+    try:
+        import bitsandbytes
+        print("✅ bitsandbytes is installed.")
+    except ImportError:
+        print("📦 Installing bitsandbytes, sentencepiece, protobuf for 4-bit FLUX...")
+        subprocess.run(["pip", "install", "-q", "bitsandbytes>=0.43.0", "sentencepiece", "protobuf"], check=True)
+    
     # Download cloudflared binary if not present
     cloudflared_path = "/content/cloudflared-linux-amd64"
     if not os.path.exists(cloudflared_path):
