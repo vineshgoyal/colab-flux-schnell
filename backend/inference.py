@@ -457,6 +457,15 @@ class InferenceManager:
                 pipe = FluxPipeline.from_pretrained(load_source, **flux_kwargs)
             else:
                 try:
+                    import bitsandbytes
+                except ImportError:
+                    logger.info("bitsandbytes not found in environment. Dynamically installing bitsandbytes, sentencepiece, protobuf...")
+                    import subprocess
+                    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "bitsandbytes>=0.43.0", "sentencepiece", "protobuf"], check=True)
+                    import importlib
+                    importlib.invalidate_caches()
+
+                try:
                     from diffusers import BitsAndBytesConfig as DiffusersBitsAndBytesConfig
                     from diffusers.quantizers import PipelineQuantizationConfig
                     from transformers import BitsAndBytesConfig as TransformersBitsAndBytesConfig
