@@ -1,0 +1,30 @@
+# Environment variables and secrets
+.env
+.env.*
+*.env
+
+# Dependency directories
+node_modules/
+
+# Python cache & virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Output generated images and job artifacts
+outputs/
+/tmp/studio_jobs/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDE configuration
+.vscode/
+.idea/
+
+# Log files
+*.log

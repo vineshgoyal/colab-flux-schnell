@@ -1,0 +1,21 @@
+{
+  "id": "marcus-reid",
+  "name": "Marcus Reid",
+  "age": 34,
+  "gender": "male",
+  "ethnicity": "British-Nordic",
+  "facial_features": "chiseled square jawline, subtle groomed stubble, straight nose, calm focused expression",
+  "eye_color": "steel gray",
+  "hair": {
+    "color": "dark slate gray",
+    "style": "textured modern comb-over fade",
+    "length": "short cropped"
+  },
+  "body": "broad athletic shoulders, 6ft 1in, tailored fit",
+  "clothing_preferences": "charcoal bespoke three-piece suits, cashmere rollneck sweaters, dark leather jackets",
+  "photography_style": "Vanity Fair portrait photography, 50mm Leica prime lens, dramatic chiaroscuro side lighting, rich tonal depth, 8k photographic resolution",
+  "preferred_seed": 404812,
+  "negative_prompt_additions": "childish, smooth plastic skin, cartoon, anime, distorted hands",
+  "reference_images": []
+}
+

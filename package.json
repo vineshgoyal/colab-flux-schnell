@@ -1,0 +1,30 @@
+{
+  "name": "ai-image-studio",
+  "version": "1.0.0",
+  "description": "Production-quality AI image-generation studio using Node.js and Google Colab GPU infrastructure",
+  "type": "module",
+  "main": "src/cli.js",
+  "bin": {
+    "studio": "./src/cli.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "doctor": "node src/cli.js doctor",
+    "models": "node src/cli.js models",
+    "serve": "node src/cli.js serve",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "stable-diffusion-xl",
+    "diffusers",
+    "colab-gpu",
+    "ai-image-generation",
+    "node-client"
+  ],
+  "author": "",
+  "license": "Apache-2.0"
+}
+

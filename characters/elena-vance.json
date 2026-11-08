@@ -1,0 +1,21 @@
+{
+  "id": "elena-vance",
+  "name": "Elena Vance",
+  "age": 28,
+  "gender": "female",
+  "ethnicity": "Mediterranean",
+  "facial_features": "high sculpted cheekbones, light natural freckles across nose bridge, soft defined jawline, arched eyebrows",
+  "eye_color": "emerald green",
+  "hair": {
+    "color": "chestnut brown with warm honey undertones",
+    "style": "loose voluminous waves with middle parting",
+    "length": "long past shoulders"
+  },
+  "body": "slender athletic build, 5ft 8in, graceful posture",
+  "clothing_preferences": "minimalist high-fashion silk blouses, tailored wool trench coats, elegant monochrome knitwear",
+  "photography_style": "Vogue editorial photography, 85mm f/1.4 lens, natural golden hour rim light, soft cinematic bokeh, 8k resolution, authentic skin microtextures",
+  "preferred_seed": 718293,
+  "negative_prompt_additions": "heavy makeup, plastic skin, cartoon, oversaturated, altered facial proportions",
+  "reference_images": []
+}
+

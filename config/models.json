@@ -1,0 +1,109 @@
+{
+  "default_model": "sdxl-base-1.0",
+  "models": [
+    {
+      "id": "sdxl-base-1.0",
+      "name": "Stable Diffusion XL Base 1.0",
+      "repo_id": "stabilityai/stable-diffusion-xl-base-1.0",
+      "pipeline": "StableDiffusionXLPipeline",
+      "description": "High-fidelity 1024x1024 flagship open weights model for photorealistic and cinematic imagery",
+      "default_resolution": {
+        "width": 768,
+        "height": 1024
+      },
+      "min_vram_gb": 8,
+      "recommended_steps": 30,
+      "default_guidance_scale": 7.0,
+      "fp16": true,
+      "license": "CreativeML OpenRAIL++-M",
+      "public_auth_required": false
+    },
+    {
+      "id": "sd-1.5",
+      "name": "Stable Diffusion 1.5",
+      "repo_id": "runwayml/stable-diffusion-v1-5",
+      "pipeline": "StableDiffusionPipeline",
+      "description": "Classic lightweight 512x512 foundation model with fast inference on modest hardware",
+      "default_resolution": {
+        "width": 512,
+        "height": 512
+      },
+      "min_vram_gb": 4,
+      "recommended_steps": 25,
+      "default_guidance_scale": 7.5,
+      "fp16": true,
+      "license": "CreativeML OpenRAIL-M",
+      "public_auth_required": false
+    },
+    {
+      "id": "ssd-1b",
+      "name": "Segmind SSD-1B",
+      "repo_id": "segmind/SSD-1B",
+      "pipeline": "StableDiffusionXLPipeline",
+      "description": "50% smaller distilled SDXL architecture offering 2x speedup and lower VRAM consumption",
+      "default_resolution": {
+        "width": 768,
+        "height": 1024
+      },
+      "min_vram_gb": 6,
+      "recommended_steps": 25,
+      "default_guidance_scale": 7.0,
+      "fp16": true,
+      "license": "Apache 2.0 compatible",
+      "public_auth_required": false
+    },
+    {
+      "id": "sdxl-turbo",
+      "name": "Stable Diffusion XL Turbo",
+      "repo_id": "stabilityai/sdxl-turbo",
+      "pipeline": "AutoPipelineForText2Image",
+      "description": "Adversarial Diffusion Distillation (ADD) checkpoint for ultra-fast 1-4 step generation",
+      "default_resolution": {
+        "width": 512,
+        "height": 512
+      },
+      "min_vram_gb": 6,
+      "recommended_steps": 4,
+      "default_guidance_scale": 0.0,
+      "fp16": true,
+      "license": "CreativeML OpenRAIL++-M Non-Commercial",
+      "public_auth_required": false
+    },
+    {
+      "id": "realistic-vision-v5.1",
+      "name": "Realistic Vision v5.1",
+      "repo_id": "SG161222/Realistic_Vision_V5.1_noVAE",
+      "pipeline": "StableDiffusionPipeline",
+      "description": "Hyper-realistic portrait and glamour fine-tuned SD 1.5 checkpoint with natural skin textures and anatomy",
+      "default_resolution": {
+        "width": 512,
+        "height": 768
+      },
+      "min_vram_gb": 4,
+      "recommended_steps": 25,
+      "default_guidance_scale": 6.0,
+      "fp16": true,
+      "license": "CreativeML OpenRAIL-M",
+      "public_auth_required": false
+    },
+    {
+      "id": "flux-schnell",
+      "name": "FLUX.1-schnell (4-bit NF4 Quantized)",
+      "repo_id": "black-forest-labs/FLUX.1-schnell",
+      "pipeline": "FluxPipeline",
+      "description": "State-of-the-art 12B parameter flow-matching transformer for photorealistic skin, anatomy and hands (4-bit NF4 Quantized)",
+      "default_resolution": {
+        "width": 768,
+        "height": 1024
+      },
+      "min_vram_gb": 8,
+      "recommended_steps": 4,
+      "default_guidance_scale": 0.0,
+      "max_sequence_length": 256,
+      "fp16": false,
+      "license": "Apache 2.0",
+      "public_auth_required": false
+    }
+  ]
+}
+

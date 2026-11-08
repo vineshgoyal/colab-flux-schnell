@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image Studio — GPU Generation</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --surface: #12151f;
+      --surface-raised: #1a1e2c;
+      --surface-border: #262c3e;
+      --surface-border-focus: #3b82f6;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.2);
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+    /* Top Navigation Bar */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { font-size: 24px; }
+    .brand-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand-subtitle { font-size: 12px; color: var(--text-muted); }
+
+    .header-status { display: flex; align-items: center; gap: 12px; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-badge.offline {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status-dot.pulse { animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    .btn-icon {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { color: var(--text); border-color: var(--text-muted); }
+
+    /* Layout Grid */
+    .app-main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
+      padding: 20px 24px;
+      max-width: 1680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 992px) {
+      .app-main { grid-template-columns: 1fr; }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--surface-border);
+      padding-bottom: 12px;
+    }
+    .panel-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+    /* Form Controls */
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .control-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .control-label span.hint { font-weight: 400; text-transform: none; }
+
+    textarea, input[type="text"], input[type="number"], select {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--surface-border-focus);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    textarea { resize: vertical; min-height: 85px; line-height: 1.45; }
+
+    /* Prompt Chips */
+    .chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .chip {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .chip:hover { color: var(--text); border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+
+    /* Aspect Ratio Selector */
+    .aspect-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .aspect-btn {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .aspect-btn:hover { border-color: var(--text-muted); }
+    .aspect-btn.active {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+    }
+    .aspect-btn .ratio-icon {
+      width: 18px;
+      height: 24px;
+      border: 1.5px solid currentColor;
+      border-radius: 2px;
+    }
+    .aspect-btn.square .ratio-icon { height: 18px; }
+    .aspect-btn.landscape .ratio-icon { width: 24px; height: 18px; }
+    .aspect-btn .label { font-size: 11px; font-weight: 600; }
+    .aspect-btn .dim { font-size: 10px; color: var(--text-muted); }
+
+    /* Grid 2-col */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Range Sliders */
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .slider-val {
+      font-size: 12px;
+      font-weight: 600;
+      color: #93c5fd;
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* Collapsible Details */
+    details {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    details summary {
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      user-select: none;
+      outline: none;
+    }
+    details summary:hover { color: var(--text); }
+    details[open] summary { margin-bottom: 12px; }
+
+    /* Generate Button */
+    .btn-generate {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s;
+    }
+    .btn-generate:hover:not(:disabled) {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-generate:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Right Preview Section */
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preview-canvas-wrapper {
+      background: #07080c;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      min-height: 480px;
+      max-height: 620px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      transition: opacity 0.3s;
+    }
+
+    .placeholder-state {
+      text-align: center;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 40px;
+    }
+    .placeholder-icon { font-size: 48px; opacity: 0.6; }
+
+    /* Progress Overlay */
+    .progress-card {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .progress-stage { font-weight: 600; color: #93c5fd; }
+    .progress-timer { color: var(--text-muted); font-size: 12px; }
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #090a0f;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .progress-actions { display: flex; justify-content: flex-end; }
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: rgba(239, 68, 68, 0.15); }
+
+    /* Metadata Bar */
+    .meta-bar {
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .meta-tags { display: flex; gap: 14px; flex-wrap: wrap; }
+    .meta-tag strong { color: var(--text); }
+    .meta-actions { display: flex; gap: 8px; }
+
+    /* Gallery Strip */
+    .gallery-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .gallery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .gallery-thumb {
+      aspect-ratio: 3/4;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      position: relative;
+      background: #000;
+      transition: all 0.2s;
+    }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-thumb:hover { border-color: var(--primary); transform: scale(1.02); }
+    .gallery-thumb.active { border-color: var(--accent); }
+
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface-raised);
+      border: 1px solid var(--surface-border);
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">🎨</div>
+      <div>
+        <div class="brand-title">AI Image Studio</div>
+        <div class="brand-subtitle">Google Colab Tesla T4 GPU Runtime</div>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <div id="vramMeter" style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+        <span>VRAM:</span>
+        <strong id="vramUsage" style="color: #93c5fd;">-- GB / -- GB</strong>
+      </div>
+
+      <div class="status-badge" id="backendBadge">
+        <span class="status-dot pulse"></span>
+        <span id="backendStatusText">Checking Colab...</span>
+      </div>
+
+      <button class="btn-icon" onclick="checkStatus()" title="Refresh Status">
+        <span>🔄</span> Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Studio Workspace -->
+  <main class="app-main">
+
+    <!-- Left Controls Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>⚙️</span> Generation Controls
+        </div>
+        <div id="activeModelBadge" style="font-size: 11px; background: rgba(59, 130, 246, 0.15); color: #93c5fd; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.3);">
+          Loading model...
+        </div>
+      </div>
+
+      <!-- Prompt Input -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Prompt</span>
+          <span class="hint" id="promptCharCount">0 chars</span>
+        </label>
+        <textarea id="promptInput" placeholder="Describe the image you want to generate... (e.g. Cinematic portrait of a woman in golden hour lighting, 8k uhd photorealistic)" oninput="updatePromptStats()"></textarea>
+
+        <!-- Quick Idea Chips -->
+        <div class="chips-row">
+          <span class="chip" onclick="appendPrompt('cinematic lighting, 8k uhd, shallow depth of field, photorealistic')">+ Cinematic</span>
+          <span class="chip" onclick="appendPrompt('golden hour sunlight, soft rim light, natural skin microtexture')">+ Golden Hour</span>
+          <span class="chip" onclick="appendPrompt('high-fashion editorial, Vogue magazine, sharp focus')">+ Fashion</span>
+          <span class="chip" onclick="appendPrompt('award-winning national geographic portrait, highly detailed')">+ NatGeo</span>
+        </div>
+      </div>
+
+      <!-- Character Selector -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Character Profile (Optional)</span>
+          <span class="hint">Injects consistent facial features</span>
+        </label>
+        <select id="characterSelect">
+          <option value="">None (Generate new face)</option>
+        </select>
+      </div>
+
+      <!-- Model Selection -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Model</span>
+          <span class="hint" id="modelHelp">Select neural architecture</span>
+        </label>
+        <div style="display: flex; gap: 8px;">
+          <select id="modelSelect" onchange="onModelChange()"></select>
+          <button class="btn-icon" id="loadModelBtn" onclick="loadSelectedModel()" title="Load weights into GPU VRAM">
+            Load to VRAM
+          </button>
+        </div>
+      </div>
+
+      <!-- Photography / Aspect Presets -->
+      <div class="control-group">
+        <label class="control-label">
+          <span>Photography Style Preset</span>
+        </label>
+        <select id="presetSelect" onchange="onPresetChange()">
+          <option value="">Custom (Manual Settings)</option>
+        </select>
+      </div>
+
+      <!-- Aspect Ratio Buttons -->
+      <div class="control-group">
+        <label class="control-label">Aspect Ratio</label>
+        <div class="aspect-grid">
+          <div class="aspect-btn active" id="aspectPortrait" onclick="setAspectRatio('portrait')">
+            <div class="ratio-icon"></div>
+            <div class="label">Portrait</div>
+            <div class="dim" id="portraitDim">768 × 1024</div>
+          </div>
+          <div class="aspect-btn square" id="aspectSquare" onclick="setAspectRatio('square')">
+            <div class="ratio-icon"></div>
+            <div class="label">Square</div>
+            <div class="dim" id="squareDim">1024 × 1024</div>
+          </div>
+          <div class="aspect-btn landscape" id="aspectLandscape" onclick="setAspectRatio('landscape')">
+            <div class="ratio-icon"></div>
+            <div class="label">Landscape</div>
+            <div class="dim" id="landscapeDim">1024 × 768</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Collapsible Advanced Settings -->
+      <details id="advancedAccordion">
+        <summary>Advanced Parameters (Steps, Guidance, Seed, Negatives)</summary>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+
+          <!-- Negative Prompt -->
+          <div class="control-group">
+            <label class="control-label">Negative Prompt</label>
+            <textarea id="negativePromptInput" style="min-height: 80px;">worst quality, low quality, blurry, out of focus, pixelated, low resolution, cartoon, anime, illustration, CGI, 3D render, plastic skin, waxy skin, overly smooth skin, artificial appearance, unrealistic anatomy, distorted body proportions, malformed body, deformed face, asymmetrical eyes, crossed eyes, poorly drawn hands, extra fingers, missing fingers, fused fingers, extra arms, extra legs, duplicate body parts, unnatural pose, twisted limbs, broken anatomy, floating limbs, cropped head, cropped feet, incomplete body, cut-off legs, unnatural lighting, harsh shadows, overexposed, underexposed, oversaturated, excessive skin smoothing, distorted clothing, unnatural fabric, text, watermark, logo, signature</textarea>
+          </div>
+
+          <!-- Dimensions Manual Controls -->
+          <div class="grid-2">
+            <div class="control-group">
+              <label class="control-label">Width</label>
+              <input type="number" id="widthInput" value="768" step="16" min="256" max="1536">
+            </div>
+            <div class="control-group">
+              <label class="control-label">Height</label>
+              <input type="number" id="heightInput" value="1024" step="16" min="256" max="1536">
+            </div>
+          </div>
+
+          <!-- Steps Slider -->
+          <div class="control-group">
+            <div class="control-label">
+              <span>Sampling Steps</span>
+              <span class="hint" id="stepsHint">4 steps for FLUX schnell</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="stepsInput" min="1" max="50" value="4" oninput="updateSliderVal('stepsInput', 'stepsVal')">
+              <span class="slider-val" id="stepsVal">4</span>
+            </div>
+          </div>
+
+          <!-- Guidance Scale Slider -->
+          <div class="control-group">
+            <div class="control-label">
+              <span>CFG / Guidance Scale</span>
+              <span class="hint" id="guidanceHint">0.0 for FLUX schnell</span>
+            </div>
+            <div class="slider-row">
+              <input type="range" id="guidanceInput" min="0" max="15" step="0.5" value="0.0" oninput="updateSliderVal('guidanceInput', 'guidanceVal')">
+              <span class="slider-val" id="guidanceVal">0.0</span>
+            </div>
+          </div>
+
+          <!-- Seed & Batch -->
+          <div class="grid-2">
+            <div class="control-group">
+              <label class="control-label">Seed (-1 = Random)</label>
+              <input type="number" id="seedInput" value="-1">
+            </div>
+            <div class="control-group">
+              <label class="control-label">Number of Images</label>
+              <input type="number" id="numImagesInput" value="1" min="1" max="4">
+            </div>
+          </div>
+
+        </div>
+      </details>
+
+      <!-- Generate Button -->
+      <button class="btn-generate" id="generateBtn" onclick="startGeneration()">
+        <span>✨</span> Generate Image (Ctrl+Enter)
+      </button>
+
+    </div>
+
+    <!-- Right Workspace Panel (Preview & History) -->
+    <div class="preview-panel">
+
+      <!-- Live Job Progress Card -->
+      <div class="progress-card" id="progressCard">
+        <div class="progress-top">
+          <div class="progress-stage" id="progressStage">Submitting task to GPU...</div>
+          <div class="progress-timer" id="progressTimer">0s</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+        <div class="progress-actions">
+          <button class="btn-cancel" onclick="cancelCurrentJob()">Cancel Job</button>
+        </div>
+      </div>
+
+      <!-- Main Canvas / Image Preview Box -->
+      <div class="preview-canvas-wrapper" id="previewWrapper">
+        <div class="placeholder-state" id="previewPlaceholder">
+          <div class="placeholder-icon">🖼️</div>
+          <h3>Ready for Generation</h3>
+          <p>Configure your prompt and click <strong>Generate Image</strong> to run inference on your Colab GPU.</p>
+        </div>
+
+        <img id="mainImage" class="preview-img" style="display: none;" alt="AI Generated Image">
+      </div>
+
+      <!-- Metadata & Action Bar -->
+      <div class="meta-bar" id="metaBar">
+        <div class="meta-tags">
+          <div class="meta-tag">Model: <strong id="metaModel">--</strong></div>
+          <div class="meta-tag">Seed: <strong id="metaSeed">--</strong></div>
+          <div class="meta-tag">Time: <strong id="metaTime">--</strong></div>
+          <div class="meta-tag">Size: <strong id="metaDim">--</strong></div>
+        </div>
+        <div class="meta-actions">
+          <button class="btn-icon" onclick="downloadCurrentImage()">⬇️ Download PNG</button>
+          <button class="btn-icon" onclick="copyCurrentPrompt()">📋 Copy Prompt</button>
+          <button class="btn-icon" onclick="reuseCurrentSeed()">🎲 Reuse Seed</button>
+        </div>
+      </div>
+
+      <!-- Gallery of Recent Generations -->
+      <div class="gallery-panel">
+        <div class="gallery-header">
+          <span>📁 Recent Generations</span>
+          <span id="galleryCount" style="color: var(--text-muted); font-size: 11px;">0 saved</span>
+        </div>
+        <div class="gallery-grid" id="galleryGrid">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Global Application State
+    let state = {
+      online: false,
+      activeModel: null,
+      currentJobId: null,
+      pollInterval: null,
+      jobStartTime: null,
+      timerInterval: null,
+      currentMetadata: null,
+      models: [],
+      photographyPresets: {},
+      aspectPresets: {}
+    };
+
+    // Initialize Studio on DOM Ready
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkStatus();
+      await loadPresets();
+      await loadCharacters();
+      await loadHistory();
+
+      // Keyboard shortcut: Ctrl+Enter or Cmd+Enter to generate
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          startGeneration();
+        }
+      });
+    });
+
+    function showToast(msg, duration = 3000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => { toast.style.display = 'none'; }, duration);
+    }
+
+    function updateSliderVal(sliderId, displayId) {
+      document.getElementById(displayId).textContent = document.getElementById(sliderId).value;
+    }
+
+    function updatePromptStats() {
+      const val = document.getElementById('promptInput').value;
+      document.getElementById('promptCharCount').textContent = `${val.length} chars`;
+    }
+
+    function appendPrompt(text) {
+      const input = document.getElementById('promptInput');
+      input.value = input.value.trim() ? `${input.value.trim()}, ${text}` : text;
+      updatePromptStats();
+      input.focus();
+    }
+
+    // 1. Fetch System Status
+    async function checkStatus() {
+      const badge = document.getElementById('backendBadge');
+      const statusText = document.getElementById('backendStatusText');
+      const vramUsage = document.getElementById('vramUsage');
+      const activeModelBadge = document.getElementById('activeModelBadge');
+
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        state.online = data.online;
+        state.activeModel = data.activeModel;
+        state.models = data.models || [];
+
+        // Populate models dropdown if empty
+        const modelSelect = document.getElementById('modelSelect');
+        if (modelSelect.children.length === 0) {
+          data.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name;
+            if (m.id === 'flux-schnell' || m.repo_id === data.activeModel) {
+              opt.selected = true;
+            }
+            modelSelect.appendChild(opt);
+          });
+          onModelChange();
+        }
+
+        if (data.online) {
+          badge.className = 'status-badge';
+          statusText.textContent = 'Colab GPU Online';
+
+          if (data.gpu && data.gpu.vram) {
+            vramUsage.textContent = `${data.gpu.vram.allocated_gb || 0} GB / ${data.gpu.vram.total_gb || 0} GB`;
+          } else {
+            vramUsage.textContent = 'GPU Active';
+          }
+
+          if (data.activeModel) {
+            const shortName = data.activeModel.split('/').pop();
+            activeModelBadge.textContent = `${shortName} [ACTIVE]`;
+            activeModelBadge.style.color = '#34d399';
+            activeModelBadge.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+          } else {
+            activeModelBadge.textContent = 'No Model in VRAM';
+            activeModelBadge.style.color = '#f59e0b';
+          }
+        } else {
+          badge.className = 'status-badge offline';
+          statusText.textContent = 'Backend Offline';
+          vramUsage.textContent = 'Disconnected';
+          activeModelBadge.textContent = 'Offline';
+        }
+      } catch (err) {
+        badge.className = 'status-badge offline';
+        statusText.textContent = 'Connection Error';
+        vramUsage.textContent = 'Unavailable';
+      }
+    }
+
+    // 2. Fetch Presets
+    async function loadPresets() {
+      try {
+        const res = await fetch('/api/presets');
+        const data = await res.json();
+        state.photographyPresets = data.photography_presets || {};
+        state.aspectPresets = data.aspect_presets || {};
+
+        const presetSelect = document.getElementById('presetSelect');
+        for (const [key, preset] of Object.entries(state.photographyPresets)) {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = preset.name || key;
+          presetSelect.appendChild(opt);
+        }
+      } catch (err) {
+        console.error('Failed to load presets:', err);
+      }
+    }
+
+    // 3. Fetch Characters
+    async function loadCharacters() {
+      try {
+        const res = await fetch('/api/characters');
+        const profiles = await res.json();
+        const select = document.getElementById('characterSelect');
+        profiles.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} (${p.age}y/o — ${p.ethnicity || 'Fictional'})`;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error('Failed to load characters:', err);
+      }
+    }
+
+    // Model Change Event
+    function onModelChange() {
+      const selectedModelId = document.getElementById('modelSelect').value;
+      const isFlux = selectedModelId.includes('flux');
+      const isSd15 = selectedModelId.includes('1-5') || selectedModelId.includes('1.5');
+
+      const stepsInput = document.getElementById('stepsInput');
+      const guidanceInput = document.getElementById('guidanceInput');
+      const stepsHint = document.getElementById('stepsHint');
+      const guidanceHint = document.getElementById('guidanceHint');
+
+      const portraitDim = document.getElementById('portraitDim');
+      const squareDim = document.getElementById('squareDim');
+      const landscapeDim = document.getElementById('landscapeDim');
+
+      if (isFlux) {
+        stepsInput.value = 4;
+        guidanceInput.value = 0.0;
+        stepsHint.textContent = 'Recommended: 4 steps (FLUX.1-schnell)';
+        guidanceHint.textContent = 'Recommended: 0.0 (guidance-distilled)';
+        portraitDim.textContent = '768 × 1024';
+        squareDim.textContent = '1024 × 1024';
+        landscapeDim.textContent = '1024 × 768';
+      } else if (isSd15) {
+        stepsInput.value = 25;
+        guidanceInput.value = 7.0;
+        stepsHint.textContent = 'Recommended: 20–30 steps';
+        guidanceHint.textContent = 'Recommended: 6.0–7.5';
+        portraitDim.textContent = '512 × 768';
+        squareDim.textContent = '512 × 512';
+        landscapeDim.textContent = '768 × 512';
+      } else {
+        // SDXL
+        stepsInput.value = 30;
+        guidanceInput.value = 7.0;
+        stepsHint.textContent = 'Recommended: 25–35 steps';
+        guidanceHint.textContent = 'Recommended: 7.0 (CFG)';
+        portraitDim.textContent = '768 × 1024';
+        squareDim.textContent = '1024 × 1024';
+        landscapeDim.textContent = '1024 × 768';
+      }
+
+      updateSliderVal('stepsInput', 'stepsVal');
+      updateSliderVal('guidanceInput', 'guidanceVal');
+      setAspectRatio(getCurrentAspectMode());
+    }
+
+    function getCurrentAspectMode() {
+      if (document.getElementById('aspectSquare').classList.contains('active')) return 'square';
+      if (document.getElementById('aspectLandscape').classList.contains('active')) return 'landscape';
+      return 'portrait';
+    }
+
+    function setAspectRatio(mode) {
+      document.querySelectorAll('.aspect-btn').forEach(btn => btn.classList.remove('active'));
+      const selectedModelId = document.getElementById('modelSelect').value;
+      const isSd15 = selectedModelId.includes('1-5') || selectedModelId.includes('1.5');
+
+      const widthInput = document.getElementById('widthInput');
+      const heightInput = document.getElementById('heightInput');
+
+      if (mode === 'square') {
+        document.getElementById('aspectSquare').classList.add('active');
+        widthInput.value = isSd15 ? 512 : 1024;
+        heightInput.value = isSd15 ? 512 : 1024;
+      } else if (mode === 'landscape') {
+        document.getElementById('aspectLandscape').classList.add('active');
+        widthInput.value = isSd15 ? 768 : 1024;
+        heightInput.value = isSd15 ? 512 : 768;
+      } else {
+        document.getElementById('aspectPortrait').classList.add('active');
+        widthInput.value = isSd15 ? 512 : 768;
+        heightInput.value = isSd15 ? 768 : 1024;
+      }
+    }
+
+    // Preset Selection
+    function onPresetChange() {
+      const presetKey = document.getElementById('presetSelect').value;
+      if (!presetKey || !state.photographyPresets[presetKey]) return;
+
+      const p = state.photographyPresets[presetKey];
+      const modelId = document.getElementById('modelSelect').value;
+      const isSd15 = modelId.includes('1-5') || modelId.includes('1.5');
+      const isFlux = modelId.includes('flux');
+
+      const target = isSd15 ? p.sd15 : p.sdxl;
+      if (target) {
+        if (!isFlux) {
+          document.getElementById('stepsInput').value = target.steps || 30;
+          document.getElementById('guidanceInput').value = target.guidance_scale || 5.5;
+          updateSliderVal('stepsInput', 'stepsVal');
+          updateSliderVal('guidanceInput', 'guidanceVal');
+        }
+      }
+
+      if (p.negative_prompt) {
+        document.getElementById('negativePromptInput').value = `${DEFAULT_NEGATIVE_PROMPT}, ${p.negative_prompt}`;
+      } else {
+        document.getElementById('negativePromptInput').value = DEFAULT_NEGATIVE_PROMPT;
+      }
+
+      showToast(`Applied preset: ${p.name}`);
+    }
+
+    // Load Model to GPU VRAM
+    async function loadSelectedModel() {
+      const modelId = document.getElementById('modelSelect').value;
+      const btn = document.getElementById('loadModelBtn');
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      showToast(`Submitting load job for ${modelId}...`);
+
+      try {
+        const res = await fetch('/api/models/load', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model_id: modelId })
+        });
+        const data = await res.json();
+        if (data.job_id) {
+          pollJobProgress(data.job_id, 'model_load');
+        } else {
+          showToast(data.message || 'Model load queued.');
+          await checkStatus();
+        }
+      } catch (err) {
+        showToast(`Failed: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Load to VRAM';
+      }
+    }
+
+    // 4. Start Generation
+    async function startGeneration() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      if (!prompt) {
+        alert('Please enter a prompt first!');
+        document.getElementById('promptInput').focus();
+        return;
+      }
+
+      const generateBtn = document.getElementById('generateBtn');
+      const progressCard = document.getElementById('progressCard');
+      const progressBar = document.getElementById('progressBar');
+      const progressStage = document.getElementById('progressStage');
+      const progressTimer = document.getElementById('progressTimer');
+
+      const payload = {
+        prompt,
+        negative_prompt: document.getElementById('negativePromptInput').value.trim(),
+        model_id: document.getElementById('modelSelect').value,
+        character_id: document.getElementById('characterSelect').value || null,
+        preset: document.getElementById('presetSelect').value || null,
+        width: parseInt(document.getElementById('widthInput').value, 10),
+        height: parseInt(document.getElementById('heightInput').value, 10),
+        steps: parseInt(document.getElementById('stepsInput').value, 10),
+        guidance_scale: parseFloat(document.getElementById('guidanceInput').value),
+        seed: parseInt(document.getElementById('seedInput').value, 10) >= 0 ? parseInt(document.getElementById('seedInput').value, 10) : null,
+        num_images: parseInt(document.getElementById('numImagesInput').value, 10) || 1
+      };
+
+      generateBtn.disabled = true;
+      generateBtn.innerHTML = '<span>⏳</span> Processing on GPU...';
+      progressCard.style.display = 'flex';
+      progressBar.style.width = '5%';
+      progressStage.textContent = 'Submitting job to GPU queue...';
+      progressTimer.textContent = '0s';
+
+      state.jobStartTime = Date.now();
+      clearInterval(state.timerInterval);
+      state.timerInterval = setInterval(() => {
+        const elapsed = Math.round((Date.now() - state.jobStartTime) / 1000);
+        progressTimer.textContent = `${elapsed}s`;
+      }, 1000);
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ error: res.statusText }));
+          throw new Error(errData.error || 'Submission failed');
+        }
+
+        const data = await res.json();
+        state.currentJobId = data.job_id;
+        pollJobProgress(data.job_id, 'generation');
+
+      } catch (err) {
+        clearInterval(state.timerInterval);
+        progressCard.style.display = 'none';
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>✨</span> Generate Image (Ctrl+Enter)';
+        alert(`Generation Error: ${err.message}`);
+      }
+    }
+
+    // 5. Poll Job Progress
+    function pollJobProgress(jobId, jobType = 'generation') {
+      clearInterval(state.pollInterval);
+      const progressBar = document.getElementById('progressBar');
+      const progressStage = document.getElementById('progressStage');
+      const generateBtn = document.getElementById('generateBtn');
+      const progressCard = document.getElementById('progressCard');
+
+      state.pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/jobs/${jobId}`);
+          if (!res.ok) return;
+
+          const job = await res.json();
+          const pct = Math.max(5, job.progress || 0);
+          progressBar.style.width = `${pct}%`;
+          progressStage.textContent = job.message || `${job.stage || 'Processing'} (${pct}%)...`;
+
+          if (job.status === 'completed') {
+            clearInterval(state.pollInterval);
+            clearInterval(state.timerInterval);
+
+            progressBar.style.width = '100%';
+            progressStage.textContent = 'Generation Complete!';
+
+            if (jobType === 'generation' && job.result_urls && job.result_urls.length > 0) {
+              displayResult(job.result_urls[0], job.local_metadata?.[0] || job);
+            }
+
+            await checkStatus();
+            await loadHistory();
+
+            setTimeout(() => {
+              progressCard.style.display = 'none';
+              generateBtn.disabled = false;
+              generateBtn.innerHTML = '<span>✨</span> Generate Image (Ctrl+Enter)';
+            }, 1200);
+
+          } else if (job.status === 'failed') {
+            clearInterval(state.pollInterval);
+            clearInterval(state.timerInterval);
+
+            progressBar.style.width = '100%';
+            progressBar.style.background = 'var(--danger)';
+            progressStage.textContent = `Failed: ${job.error || job.message || 'Error occurred'}`;
+
+            setTimeout(() => {
+              progressCard.style.display = 'none';
+              generateBtn.disabled = false;
+              generateBtn.innerHTML = '<span>✨</span> Generate Image (Ctrl+Enter)';
+              alert(`Job failed: ${job.error || job.message}`);
+            }, 2000);
+          }
+        } catch (pollErr) {
+          console.warn('Transient polling issue:', pollErr);
+        }
+      }, 1500);
+    }
+
+    // 6. Cancel Current Job
+    async function cancelCurrentJob() {
+      if (!state.currentJobId) return;
+      try {
+        await fetch(`/api/jobs/${state.currentJobId}/cancel`, { method: 'POST' });
+        showToast('Cancel request sent to GPU.');
+      } catch (err) {
+        showToast(`Cancel failed: ${err.message}`);
+      }
+    }
+
+    // 7. Display Result in Main Canvas
+    function displayResult(imageUrl, metadata) {
+      state.currentMetadata = metadata;
+      const img = document.getElementById('mainImage');
+      const placeholder = document.getElementById('previewPlaceholder');
+      const metaBar = document.getElementById('metaBar');
+
+      img.src = imageUrl;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+
+      metaBar.style.display = 'flex';
+      document.getElementById('metaModel').textContent = (metadata.model_id || 'AI Model').split('/').pop();
+      document.getElementById('metaSeed').textContent = metadata.seed ?? 'Random';
+      document.getElementById('metaTime').textContent = metadata.duration_seconds ? `${metadata.duration_seconds}s` : '--';
+      document.getElementById('metaDim').textContent = `${metadata.width || 512} × ${metadata.height || 768}`;
+    }
+
+    // 8. Actions on Current Image
+    function downloadCurrentImage() {
+      if (!state.currentMetadata) return;
+      const img = document.getElementById('mainImage');
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = state.currentMetadata.image_file || 'ai_generated_image.png';
+      a.click();
+    }
+
+    function copyCurrentPrompt() {
+      if (!state.currentMetadata || !state.currentMetadata.prompt) return;
+      navigator.clipboard.writeText(state.currentMetadata.prompt);
+      showToast('Prompt copied to clipboard!');
+    }
+
+    function reuseCurrentSeed() {
+      if (!state.currentMetadata || state.currentMetadata.seed === undefined) return;
+      document.getElementById('seedInput').value = state.currentMetadata.seed;
+      showToast(`Set seed to ${state.currentMetadata.seed}`);
+    }
+
+    // 9. Load History Gallery
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history?limit=24');
+        const items = await res.json();
+        const gallery = document.getElementById('galleryGrid');
+        const count = document.getElementById('galleryCount');
+
+        gallery.innerHTML = '';
+        count.textContent = `${items.length} generated`;
+
+        items.forEach((item, index) => {
+          if (!item.image_file) return;
+          const thumb = document.createElement('div');
+          thumb.className = `gallery-thumb ${index === 0 ? 'active' : ''}`;
+          thumb.title = `Prompt: "${item.prompt}" (Seed: ${item.seed})`;
+
+          const img = document.createElement('img');
+          img.src = `/outputs/${item.image_file}`;
+          img.loading = 'lazy';
+          img.alt = item.prompt || 'Thumbnail';
+
+          thumb.appendChild(img);
+          thumb.onclick = () => {
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+            displayResult(`/outputs/${item.image_file}`, item);
+
+            // Populate form with this prompt & seed
+            if (item.prompt) {
+              document.getElementById('promptInput').value = item.prompt;
+              updatePromptStats();
+            }
+            if (item.seed !== undefined) {
+              document.getElementById('seedInput').value = item.seed;
+            }
+          };
+
+          gallery.appendChild(thumb);
+        });
+
+        // Auto display latest image if available and canvas is empty
+        if (items.length > 0 && document.getElementById('mainImage').style.display === 'none') {
+          displayResult(`/outputs/${items[0].image_file}`, items[0]);
+        }
+      } catch (err) {
+        console.error('Failed to load history:', err);
+      }
+    }
+  </script>
+</body>
+</html>

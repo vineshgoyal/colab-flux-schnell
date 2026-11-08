@@ -1,0 +1,159 @@
+{
+  "defaults": {
+    "steps": 30,
+    "guidance_scale": 7.0,
+    "format": "png",
+    "preset": "portrait",
+    "batch_size": 1
+  },
+  "parameter_limits": {
+    "width": { "min": 256, "max": 1536, "step": 8 },
+    "height": { "min": 256, "max": 1536, "step": 8 },
+    "steps": { "min": 10, "max": 60 },
+    "guidance_scale": { "min": 1.0, "max": 15.0 },
+    "batch_size": { "min": 1, "max": 4 }
+  },
+  "aspect_presets": {
+    "portrait": {
+      "width": 768,
+      "height": 1024,
+      "description": "Standard editorial portrait aspect ratio (3:4)"
+    },
+    "portrait_xl": {
+      "width": 832,
+      "height": 1216,
+      "description": "Native SDXL portrait aspect ratio"
+    },
+    "portrait_sd15": {
+      "width": 512,
+      "height": 768,
+      "description": "Optimized portrait for SD 1.5"
+    },
+    "square": {
+      "width": 1024,
+      "height": 1024,
+      "description": "Standard 1:1 square canvas"
+    },
+    "square_sd15": {
+      "width": 512,
+      "height": 512,
+      "description": "Optimized 1:1 canvas for SD 1.5"
+    },
+    "landscape": {
+      "width": 1024,
+      "height": 768,
+      "description": "Editorial landscape aspect ratio (4:3)"
+    },
+    "landscape_sd15": {
+      "width": 768,
+      "height": 512,
+      "description": "Editorial landscape aspect ratio for SD 1.5"
+    },
+    "landscape_cinematic": {
+      "width": 1216,
+      "height": 832,
+      "description": "Widescreen cinematic aspect ratio"
+    }
+  },
+  "photography_presets": {
+    "beauty-portrait": {
+      "name": "Beauty Portrait",
+      "description": "Tight head-and-shoulders beauty portrait capturing natural facial proportions, authentic skin pores, and sharp eye reflections.",
+      "framing": "extreme close-up beauty portrait, head-and-shoulders crop",
+      "lens": "85mm f/1.4 portrait lens, shallow depth of field, razor-sharp iris focus",
+      "lighting": "Profoto beauty dish key light, soft silver reflector fill, delicate eye catchlights",
+      "style": "high-end commercial beauty photography, authentic skin microtexture, natural skin pores, 8k resolution",
+      "negative_prompt": "plastic skin, airbrushed, smoothed face, mannequin, doll, cartoon, anime, blurry, distorted eyes, asymmetrical makeup, bad teeth",
+      "sdxl": { "width": 768, "height": 1024, "steps": 30, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "luxury-fashion": {
+      "name": "Luxury Fashion Editorial",
+      "description": "Haute couture high-fashion editorial portrait with premium designer tailoring and sophisticated styling.",
+      "framing": "medium-length three-quarter fashion editorial portrait",
+      "lens": "50mm prime f/2.0, Hasselblad H6D-100c medium format clarity",
+      "lighting": "architectural soft daylight diffusion with gentle rim light",
+      "style": "haute couture Vogue editorial, bespoke fabric drape and texture, confident stance, filmic color grading",
+      "negative_prompt": "cheap fabric, wrinkled clothes, amateur lighting, bad anatomy, deformed hands, cartoon, oversaturated",
+      "sdxl": { "width": 768, "height": 1024, "steps": 32, "guidance_scale": 6.0 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "fitness-glamour": {
+      "name": "Fitness & Athletic Glamour",
+      "description": "Athletic glamour photography highlighting muscular definition, natural skin sheen, and dynamic athletic posture.",
+      "framing": "three-quarter athletic stance, defined muscle contours",
+      "lens": "70-200mm f/2.8 telephoto lens, cinematic compression",
+      "lighting": "dramatic cross-key rim lighting, edge highlights delineating muscular tone and athletic form",
+      "style": "athletic magazine cover aesthetic, toned physique, healthy natural glow, sharp athletic apparel details",
+      "negative_prompt": "deformed muscles, unnatural anatomy, extra limbs, bad proportions, flat lighting, blurry, cartoon",
+      "sdxl": { "width": 768, "height": 1024, "steps": 30, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "evening-editorial": {
+      "name": "Evening Gala Editorial",
+      "description": "Dramatic evening gala and red-carpet aesthetics with moody atmospheric night lighting and haute couture silk.",
+      "framing": "full-length or three-quarter evening gown editorial portrait",
+      "lens": "35mm f/1.4 prime lens, rich environmental depth of field",
+      "lighting": "warm ambient chandelier golden bokeh, cool cinematic rim backlight",
+      "style": "high-society evening gala, luxurious satin and velvet fabric, elegant poise, cinematic dynamic range",
+      "negative_prompt": "noisy shadows, oversaturated, muddy contrast, plastic texture, deformed hands, cartoon",
+      "sdxl": { "width": 768, "height": 1024, "steps": 30, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "beach-fashion": {
+      "name": "Beach & Resort Fashion",
+      "description": "Sun-drenched coastal fashion and resortwear photography with natural golden hour lighting and ocean breeze.",
+      "framing": "three-quarter or full-body coastal fashion portrait",
+      "lens": "85mm f/1.8 prime lens, creamy natural outdoor bokeh",
+      "lighting": "warm golden-hour sun rim light, gentle ocean water reflection fill",
+      "style": "resort fashion catalog, natural windblown hair movement, sun-kissed realistic skin texture, turquoise sea backdrop",
+      "negative_prompt": "unnatural sun glare, distorted limbs, bad feet, cartoon, flat skin, washed out, plastic face",
+      "sdxl": { "width": 768, "height": 1024, "steps": 30, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "cinematic-portrait": {
+      "name": "Cinematic 35mm Film Still",
+      "description": "Atmospheric 35mm motion picture still with cinematic color grading, shallow depth of field, and narrative mood.",
+      "framing": "cinematic medium portrait, narrative film still composition",
+      "lens": "35mm anamorphic prime lens, subtle oval bokeh and gentle halation",
+      "lighting": "moody chiaroscuro, volumetric shadows, motivated practical amber light sources",
+      "style": "Kodak Vision3 500T 35mm motion picture film stock, organic film grain, authentic cinematic color grade",
+      "negative_prompt": "flat lighting, digital sharpness, sterile, oversaturated, video game render, 3d model, anime",
+      "sdxl": { "width": 768, "height": 1024, "steps": 30, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "natural-lifestyle": {
+      "name": "Natural Daylight Lifestyle",
+      "description": "Authentic, candid-style editorial portrait in natural daylight with organic, relaxed styling and unposed feel.",
+      "framing": "candid environmental medium portrait",
+      "lens": "50mm f/1.8 street documentary lens",
+      "lighting": "soft diffused window daylight, clean color temperature, soft natural shadow roll-off",
+      "style": "authentic documentary portraiture, unposed relaxed expression, natural hair texture, realistic casual wardrobe",
+      "negative_prompt": "stiff pose, studio flash, fake smile, plastic skin, anime, heavy makeup, artificial looking",
+      "sdxl": { "width": 768, "height": 1024, "steps": 28, "guidance_scale": 5.5 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    },
+    "studio-full-body": {
+      "name": "Studio Full-Body Fashion",
+      "description": "Full-length commercial studio photograph on seamless infinity backdrop with crisp professional strobe illumination.",
+      "framing": "head-to-toe full-length standing fashion pose",
+      "lens": "70mm portrait telephoto lens, zero perspective distortion",
+      "lighting": "four-point studio strobe setup with softboxes, clean seamless cyclorama backdrop",
+      "style": "high-end commercial lookbook, crisp garment silhouette, complete full-body standing posture from shoes to head",
+      "negative_prompt": "cut-off feet, deformed shoes, cropped head, floating, bad anatomy, cartoon, crooked legs",
+      "sdxl": { "width": 768, "height": 1024, "steps": 32, "guidance_scale": 6.0 },
+      "sd15": { "width": 512, "height": 768, "steps": 25, "guidance_scale": 7.0 }
+    }
+  },
+  "presets": {
+    "portrait": { "width": 768, "height": 1024 },
+    "portrait_xl": { "width": 832, "height": 1216 },
+    "portrait_sd15": { "width": 512, "height": 768 },
+    "square": { "width": 1024, "height": 1024 },
+    "square_sd15": { "width": 512, "height": 512 },
+    "landscape": { "width": 1024, "height": 768 },
+    "landscape_sd15": { "width": 768, "height": 512 },
+    "landscape_cinematic": { "width": 1216, "height": 832 }
+  },
+  "default_negative_prompt": "worst quality, low quality, blurry, out of focus, pixelated, low resolution, cartoon, anime, illustration, CGI, 3D render, plastic skin, waxy skin, overly smooth skin, artificial appearance, unrealistic anatomy, distorted body proportions, malformed body, deformed face, asymmetrical eyes, crossed eyes, poorly drawn hands, extra fingers, missing fingers, fused fingers, extra arms, extra legs, duplicate body parts, unnatural pose, twisted limbs, broken anatomy, floating limbs, cropped head, cropped feet, incomplete body, cut-off legs, unnatural lighting, harsh shadows, overexposed, underexposed, oversaturated, excessive skin smoothing, distorted clothing, unnatural fabric, text, watermark, logo, signature"
+}
