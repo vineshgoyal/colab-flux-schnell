@@ -1,4 +1,9 @@
-# 🎨 AI Image Studio
+# 🎨 AI Image Studio (colab-flux-schnell)
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/vineshgoyal/colab-flux-schnell/blob/main/notebooks/colab_flux_schnell.ipynb)
+
+> 💡 **Persistent Colab Notebook**: Click the badge above to open the saved notebook directly in Google Colab.
+> Click **File ➔ Save a copy in Drive** in Colab to permanently keep this notebook in your Google Account. Weights and outputs are persisted to Google Drive so you never need to recreate files or redownload models on demand.
 
 Production-quality AI image-generation studio combining a high-performance **Google Colab GPU inference backend** (PyTorch, Hugging Face Diffusers, FastAPI, Cloudflare Tunnel) with a zero-dependency **JavaScript (Node.js 20+) CLI client**, character consistency engine, and browser studio UI.
 
